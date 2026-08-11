@@ -26,24 +26,21 @@ class Retriever:
         self.index = faiss.read_index(str(path / "faiss.index"))
         self.model = SentenceTransformer(MODEL)
 
-    def search(self, query: str, k: int = 5, pool: int = 20, mode: str = "hybrid", source: str | None = None):
+    def search(self, query: str, k: int = 5, pool: int = 20, source: str | None = None):
         allowed = {i for i, c in enumerate(self.chunks) if source is None or c["type"] == source}
 
-        ranks = []
+        # keyword
+        scores = self.bm25.get_scores(query.lower().split())
+        bm25_order = [i for i in np.argsort(scores)[::-1] if int(i) in allowed][:pool]
 
-        if mode in ("hybrid", "bm25"):
-            scores = self.bm25.get_scores(query.lower().split())
-            order = [i for i in np.argsort(scores)[::-1] if int(i) in allowed]
-            ranks.append(order[:pool])
+        # dense
+        qv = self.model.encode([QUERY_PREFIX + query], normalize_embeddings=True)
+        _, ids = self.index.search(np.asarray(qv, dtype="float32"), len(self.chunks))
+        dense_order = [i for i in ids[0] if int(i) in allowed][:pool]
 
-        if mode in ("hybrid", "dense"):
-            qv = self.model.encode([QUERY_PREFIX + query], normalize_embeddings=True)
-            _, ids = self.index.search(np.asarray(qv, dtype="float32"), len(self.chunks))
-            order = [i for i in ids[0] if int(i) in allowed]
-            ranks.append(order[:pool])
-
+        # reciprocal rank fusion
         fused: dict[int, float] = {}
-        for lst in ranks:
+        for lst in (bm25_order, dense_order):
             for rank, idx in enumerate(lst):
                 fused[int(idx)] = fused.get(int(idx), 0.0) + 1.0 / (RRF_K + rank + 1)
 
