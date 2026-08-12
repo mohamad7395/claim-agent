@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, ".")
 from retrieve import Retriever
 
-cases = json.loads(Path("evals/retrieval_testset.json").read_text())
+cases = json.loads(Path("/Users/mohamad/python-workspace/claim-agent/evals/retrieval_testset.json").read_text())
 
 r = Retriever()
 
