@@ -1,15 +1,14 @@
 import csv
 
-rows = []
-with open("data/airports_raw.dat", encoding="utf-8") as f:
-    for r in csv.reader(f):
-        iata, lat, lon = r[4], r[6], r[7]
-        if len(iata) == 3 and iata.isalpha():
-            rows.append([iata.upper(), lat, lon])
+COLS = ["id","name","city","country","iata","icao","lat","lon",
+        "alt","timezone","dst","tz_db","type","source"]
 
-with open("data/airports.csv", "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f)
-    w.writerow(["iata", "lat", "lon"])
-    w.writerows(rows)
-
-print(len(rows), "airports")
+with open("data/airports_raw.dat", encoding="utf-8") as f_in, \
+     open("data/airports.csv", "w", newline="", encoding="utf-8") as f_out:
+    reader = csv.reader(f_in)
+    writer = csv.writer(f_out)
+    writer.writerow(["iata", "country", "lat", "lon"])
+    for row in reader:
+        row = dict(zip(COLS, row))
+        if row["iata"] and row["iata"] != "\\N":
+            writer.writerow([row["iata"], row["country"], row["lat"], row["lon"]])
