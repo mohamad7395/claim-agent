@@ -8,15 +8,18 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-client = OpenAI(api_key=os.environ["GROQ_API_KEY"], base_url="https://api.groq.com/openai/v1")
-MODEL = "llama-3.3-70b-versatile"
+client = OpenAI(
+    api_key=os.environ["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1",
+)
+MODEL = "openai/gpt-oss-120b"
 
 
 def draft_letter_node(state: dict) -> dict:
     facts = state["facts"]
     amount = state["amount"]
 
-    print(f"[draft] writing letter — {facts.claim_type}, EUR {amount}, {facts.origin}->{facts.destination}")
+    # print(f"[draft] writing letter — {facts.claim_type}, EUR {amount}, {facts.origin}->{facts.destination}")
 
     prompt = f"""Write a short, formal compensation claim letter to an airline.
 
@@ -37,5 +40,5 @@ polite but firm, and ask for payment within 14 days."""
         messages=[{"role": "user", "content": prompt}],
     )
     letter = resp.choices[0].message.content
-    print(f"[draft] letter written ({len(letter)} chars)")
+    # print(f"[draft] letter written ({len(letter)} chars)")
     return {"letter": letter}
